@@ -99,45 +99,49 @@ private:
 
     void insert_balance(NodeIt node)
     {
-        while (node->parent()->color() == node_colors::RED)
+        NodeIt end = nodes_.end();
+        if (node->parent() != end)
         {
-            if (node->parent() == node->parent()->parent()->left()) 
+            while (node->parent()->color() == node_colors::RED)
             {
-                NodeIt ppr = node->parent()->parent()->right();
-                if (ppr->color() == node_colors::RED)
+                if (node->parent() == node->parent()->parent()->left()) 
                 {
+                    NodeIt ppr = node->parent()->parent()->right();
+                    if (ppr->color() == node_colors::RED)
+                    {
+                        node->parent()->set_color(node_colors::BLACK);
+                        ppr->set_color(node_colors::BLACK);
+                        node->parent()->parent()->set_color(node_colors::RED);
+                        node = node->parent()->parent(); 
+                    }
+                    else if (node == node->parent()->right())
+                    {
+                        node = node->parent();
+                        rotate_node_left(node);
+                    }
                     node->parent()->set_color(node_colors::BLACK);
-                    ppr->set_color(node_colors::BLACK);
                     node->parent()->parent()->set_color(node_colors::RED);
-                    node = node->parent()->parent(); 
-                }
-                else if (node == node->parent()->right())
-                {
-                    node = node->parent();
-                    rotate_node_left(node);
-                }
-                node->parent()->set_color(node_colors::BLACK);
-                node->parent()->parent()->set_color(node_colors::RED);
-                rotate_node_right(node);
-            }
-            else
-            {
-                NodeIt ppl = node->parent()->parent()->left();
-                if (ppl->color() == node_colors::RED)
-                {
-                    node->parent()->set_color(node_colors::BLACK);
-                    ppl->set_color(node_colors::BLACK);
-                    node->parent()->parent()->set_color(node_colors::RED);
-                    node = node->parent()->parent(); 
-                }
-                else if (node == node->parent()->left())
-                {
-                    node = node->parent();
                     rotate_node_right(node);
                 }
-                node->parent()->set_color(node_colors::BLACK);
-                node->parent()->parent()->set_color(node_colors::RED);
-                rotate_node_left(node);
+                else
+                {
+                    NodeIt ppl = node->parent()->parent()->left();
+                    if (ppl->color() == node_colors::RED)
+                    {
+                        node->parent()->set_color(node_colors::BLACK);
+                        ppl->set_color(node_colors::BLACK);
+                        node->parent()->parent()->set_color(node_colors::RED);
+                        node = node->parent()->parent(); 
+                    }
+                    else if (node == node->parent()->left())
+                    {
+                        node = node->parent();
+                        rotate_node_right(node);
+                    }
+                    node->parent()->set_color(node_colors::BLACK);
+                    node->parent()->parent()->set_color(node_colors::RED);
+                    rotate_node_left(node);
+                }
             }
         }
         root_->set_color(node_colors::BLACK);

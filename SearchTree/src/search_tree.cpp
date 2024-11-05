@@ -43,6 +43,9 @@ int main(void)
                 ConstIt left_it = st.lower_bound(left), right_it = st.upper_bound(right);
                 std::cout << st.get_distance(left_it, right_it) << " ";
             }
+            default:
+                std::cout << "Incorrect input.\nType 'k' to input key and 'q' to input bounds." << std::endl;
+                break;
         }
     }
     std::cout << std::endl;
