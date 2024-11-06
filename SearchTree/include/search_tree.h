@@ -1,9 +1,10 @@
 #pragma once
 
+#include <cassert>
+#include <functional>
+#include <iostream>
 #include <list>
 #include <unordered_map>
-#include <functional>
-#include <cassert>
 
 namespace RangeQueries{
 
@@ -14,10 +15,7 @@ template <
 > class search_tree_t final {
     class node_t final {
     public:
-        enum /*class*/ node_colors {
-            RED,
-            BLACK
-        };
+        enum node_colors { RED, BLACK };
         using NodeIt = typename std::list<node_t>::iterator;
         using NodeConstIt = typename std::list<node_t>::const_iterator;
 
@@ -27,11 +25,12 @@ template <
         NodeIt parent_, left_, right_;
     
     public:
-        node_t(KeyT &key, node_colors color, NodeIt parent, 
-               NodeIt left, NodeIt right)
-        : key_(key), color_(color), parent_(parent),
-          left_(left), right_(right) {}
-        
+        node_t(const KeyT &key, node_colors color, NodeIt parent, NodeIt left,
+               NodeIt right)
+            : key_(key), color_(color), parent_(parent), left_(left),
+              right_(right)
+        {}
+
         NodeIt parent() const {return parent_;}
         NodeIt left() const {return left_;}
         NodeIt right() const {return right_;}
@@ -59,6 +58,7 @@ private:
     {
         NodeIt end = nodes_.end();
         NodeIt last_r = node->right();
+        assert(last_r != end);
 
         node->set_right(last_r->left());
         if (last_r->left() != end)
@@ -80,6 +80,7 @@ private:
     {
         NodeIt end = nodes_.end();
         NodeIt last_l = node->left();
+        assert(last_l != end);
 
         node->set_left(last_l->right());
         if (last_l->right() != end)
@@ -102,12 +103,13 @@ private:
         NodeIt end = nodes_.end();
         if (node->parent() != end)
         {
-            while (node->parent()->color() == node_colors::RED)
+            while (node->parent() != end &&
+                   node->parent()->color() == node_colors::RED)
             {
                 if (node->parent() == node->parent()->parent()->left()) 
                 {
                     NodeIt ppr = node->parent()->parent()->right();
-                    if (ppr->color() == node_colors::RED)
+                    if (ppr != end && ppr->color() == node_colors::RED)
                     {
                         node->parent()->set_color(node_colors::BLACK);
                         ppr->set_color(node_colors::BLACK);
@@ -119,14 +121,17 @@ private:
                         node = node->parent();
                         rotate_node_left(node);
                     }
-                    node->parent()->set_color(node_colors::BLACK);
-                    node->parent()->parent()->set_color(node_colors::RED);
-                    rotate_node_right(node);
+                    else
+                    {
+                        node->parent()->set_color(node_colors::BLACK);
+                        node->parent()->parent()->set_color(node_colors::RED);
+                        rotate_node_right(node->parent()->parent());
+                    }
                 }
                 else
                 {
                     NodeIt ppl = node->parent()->parent()->left();
-                    if (ppl->color() == node_colors::RED)
+                    if (ppl != end && ppl->color() == node_colors::RED)
                     {
                         node->parent()->set_color(node_colors::BLACK);
                         ppl->set_color(node_colors::BLACK);
@@ -138,9 +143,12 @@ private:
                         node = node->parent();
                         rotate_node_right(node);
                     }
-                    node->parent()->set_color(node_colors::BLACK);
-                    node->parent()->parent()->set_color(node_colors::RED);
-                    rotate_node_left(node);
+                    else
+                    {
+                        node->parent()->set_color(node_colors::BLACK);
+                        node->parent()->parent()->set_color(node_colors::RED);
+                        rotate_node_left(node->parent()->parent());
+                    }
                 }
             }
         }
@@ -158,12 +166,31 @@ private:
         return node != end && is_in_interval(node->key(), left, right);
     }
 
+    void dump_recursive(NodeIt node, size_t depth) const
+    {
+        if (node->right() != end())
+            dump_recursive(node->right(), depth + 1);
+
+        for (size_t i = 0; i < depth; ++i)
+            std::cout << "\t";
+        std::cout << "[" << node->key();
+        if (node->color() == node_colors::BLACK)
+            std::cout << "B";
+        else
+            std::cout << "R";
+        std::cout << "]" << std::endl;
+
+        if (node->left() != end())
+            dump_recursive(node->left(), depth + 1);
+    }
+
 public:
     search_tree_t() : nodes_(), root_(nodes_.end()) {}
 
     NodeIt end() {return nodes_.end();}
+    NodeConstIt end() const { return nodes_.end(); }
 
-    NodeIt insert(KeyT &key)
+    NodeIt insert(const KeyT &key)
     {
         NodeIt end = nodes_.end();
         NodeIt par = end, cur_node = root_;
@@ -193,7 +220,7 @@ public:
         return new_node;
     }
 
-    NodeConstIt lower_bound(KeyT &key) const
+    NodeConstIt lower_bound(const KeyT &key) const
     {
         NodeConstIt end = nodes_.end();
         NodeConstIt par = end, cur_node = root_;
@@ -210,12 +237,11 @@ public:
             par = cur_node;
             cur_node = cur_node->right();
         }
-        if (cur_node == end) return par;
 
-        return cur_node;
+        return par;
     }
 
-    NodeConstIt upper_bound(KeyT &key) const
+    NodeConstIt upper_bound(const KeyT &key) const
     {
         NodeConstIt end = nodes_.end();
         NodeConstIt par = end, cur_node = root_;
@@ -232,9 +258,8 @@ public:
             par = cur_node;
             cur_node = cur_node->left();
         }
-        if (cur_node == end) return par;
 
-        return cur_node;
+        return par;
     }
 
     size_t get_distance(NodeConstIt s, NodeConstIt f) const
@@ -263,6 +288,12 @@ public:
             
         }
         return s_dist + f_dist - 1;
+    }
+
+    void dump() const
+    {
+        size_t start_depth = 0;
+        dump_recursive(root_, start_depth);
     }
 };
 
