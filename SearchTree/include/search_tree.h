@@ -47,7 +47,6 @@ template <
         void set_size(size_t sz) { sz_ = sz; }
         void inc_size() { ++sz_; }
         void dec_size() { --sz_; }
-        // Changing color
     };
 
 public:
@@ -55,13 +54,16 @@ public:
     using NodeIt = typename node_t::NodeIt;
     using NodeConstIt = typename node_t::NodeConstIt;
 
+    NodeIt nil() { return nodes_.end(); }
+    NodeConstIt nil() const { return nodes_.end(); }
+
 private:
     std::list<node_t> nodes_;
     NodeIt root_;
 
     void rotate_node_left(NodeIt node)
     {
-        NodeIt end = nodes_.end();
+        NodeIt end = nil();
         assert(node != end);
         NodeIt last_r = node->right();
         assert(last_r != end);
@@ -92,7 +94,7 @@ private:
 
     void rotate_node_right(NodeIt node)
     {
-        NodeIt end = nodes_.end();
+        NodeIt end = nil();
         assert(node != end);
         NodeIt last_l = node->left();
         assert(last_l != end);
@@ -123,7 +125,7 @@ private:
 
     void insert_balance(NodeIt node)
     {
-        NodeIt end = nodes_.end();
+        NodeIt end = nil();
         if (node->parent() != end)
         {
             while (node->parent() != end &&
@@ -185,13 +187,86 @@ private:
 
     bool is_valid(NodeConstIt node, const KeyT &left, const KeyT &right) const
     {
-        NodeConstIt end = nodes_.end();
+        NodeConstIt end = nil();
         return node != end && is_in_interval(node->key(), left, right);
+    }
+
+    NodeConstIt get_sub_root(const KeyT &l_key, const KeyT &r_key) const
+    {
+        NodeConstIt sub_root = root_;
+        while (true)
+        {
+            if (CompT{}(sub_root->key(), l_key))
+                sub_root = sub_root->right();
+            else if (CompT{}(r_key, sub_root->key()))
+                sub_root = sub_root->left();
+            else
+                break;
+        }
+        return sub_root;
+    }
+
+    size_t get_distance_to_left(NodeConstIt sub_root, NodeConstIt l) const
+    {
+        if (l == sub_root)
+            return 1;
+
+        NodeConstIt end = nil(), par = sub_root, cur_node;
+        KeyT l_key = l->key();
+        size_t l_dist = 0;
+
+        cur_node = sub_root->left();
+        while (par != l)
+        {
+            if (CompT{}(cur_node->key(), l_key))
+            {
+                par = cur_node;
+                cur_node = cur_node->right();
+            }
+            else
+            {
+                if (cur_node->right() != end)
+                    l_dist += cur_node->right()->size();
+                ++l_dist;
+                par = cur_node;
+                cur_node = cur_node->left();
+            }
+        }
+        return l_dist;
+    }
+
+    size_t get_distance_to_right(NodeConstIt sub_root, NodeConstIt r) const
+    {
+        if (r == sub_root)
+            return 1;
+
+        NodeConstIt end = nil(), par = sub_root, cur_node;
+        KeyT r_key = r->key();
+        size_t r_dist = 0;
+
+        cur_node = sub_root->right();
+        while (par != r)
+        {
+            if (CompT{}(r_key, cur_node->key()))
+            {
+                par = cur_node;
+                cur_node = cur_node->left();
+            }
+            else
+            {
+                if (cur_node->left() != end)
+                    r_dist += cur_node->left()->size();
+                ++r_dist;
+                par = cur_node;
+                cur_node = cur_node->right();
+            }
+        }
+        return r_dist;
     }
 
     void dump_recursive(NodeIt node, size_t depth) const
     {
-        if (node->right() != end())
+        if (node->right() != nil())
             dump_recursive(node->right(), depth + 1);
 
         for (size_t i = 0; i < depth; ++i)
@@ -206,19 +281,16 @@ private:
             std::cout << "\t";
         std::cout << "sz" << node->size() << std::endl;
 
-        if (node->left() != end())
+        if (node->left() != nil())
             dump_recursive(node->left(), depth + 1);
     }
 
 public:
-    search_tree_t() : nodes_(), root_(nodes_.end()) {}
-
-    NodeIt end() {return nodes_.end();}
-    NodeConstIt end() const { return nodes_.end(); }
+    search_tree_t() : nodes_(), root_(nil()) {}
 
     NodeIt insert(const KeyT &key)
     {
-        NodeIt end = nodes_.end();
+        NodeIt end = nil();
         NodeIt par = end, cur_node = root_;
         
         while (cur_node != end)
@@ -235,7 +307,7 @@ public:
         }
 
         nodes_.emplace_back(key, node_colors::RED, par, end, end);
-        NodeIt new_node = std::prev(nodes_.end());
+        NodeIt new_node = std::prev(end);
         if (par == end)
             root_ = new_node;
         else if (CompT{}(key, par->key()))
@@ -249,20 +321,23 @@ public:
 
     NodeConstIt lower_bound(const KeyT &key) const
     {
-        NodeConstIt end = nodes_.end();
+        NodeConstIt end = nil();
         NodeConstIt par = end, cur_node = root_;
 
-        while (cur_node != end && CompT{}(key, cur_node->key()))
+        while (cur_node != end)
         {
-            par = cur_node;
-            cur_node = cur_node->left();
-        }
-        if (cur_node == end) return par;
-
-        while (cur_node != end && !CompT{}(key, cur_node->key()))
-        {
-            par = cur_node;
-            cur_node = cur_node->right();
+            if (CompT{}(key, cur_node->key()))
+            {
+                par = cur_node;
+                cur_node = cur_node->left();
+            }
+            else if (KeyEqualT{}(key, cur_node->key()))
+                return cur_node;
+            else
+            {
+                par = cur_node;
+                cur_node = cur_node->right();
+            }
         }
 
         return par;
@@ -270,20 +345,21 @@ public:
 
     NodeConstIt upper_bound(const KeyT &key) const
     {
-        NodeConstIt end = nodes_.end();
+        NodeConstIt end = nil();
         NodeConstIt par = end, cur_node = root_;
 
-        while (cur_node != end && !CompT{}(key, cur_node->key()))
+        while (cur_node != end)
         {
-            par = cur_node;
-            cur_node = cur_node->right();
-        }
-        if (cur_node == end) return par;
-
-        while (cur_node != end && CompT{}(key, cur_node->key()))
-        {
-            par = cur_node;
-            cur_node = cur_node->left();
+            if (CompT{}(key, cur_node->key()))
+            {
+                par = cur_node;
+                cur_node = cur_node->left();
+            }
+            else
+            {
+                par = cur_node;
+                cur_node = cur_node->right();
+            }
         }
 
         return par;
@@ -291,24 +367,18 @@ public:
 
     size_t get_distance(NodeConstIt s, NodeConstIt f) const
     {
-        NodeConstIt end = nodes_.end();
-        if (s == end || f == end)
+        NodeConstIt end = nil();
+        if (s == end || f == end || s == f)
             return 0;
-
-        assert(CompT{}(s->key(), f->key()));
-
         KeyT s_key = s->key(), f_key = f->key();
-        size_t s_l_size = (s->left() != end ? s->left()->size() : 0),
-               f_r_size = (f->right() != end ? f->right()->size() : 0);
-        NodeConstIt subtree_root = s, par = s->parent();
+        assert(CompT{}(s_key, f_key));
 
-        while (par != end && is_valid(par, s_key, f_key))
-        {
-            subtree_root = par;
-            par = par->parent();
-        }
+        NodeConstIt sub_root = get_sub_root(s_key, f_key);
 
-        return subtree_root->size() - s_l_size - f_r_size - 2;
+        size_t s_dist = get_distance_to_left(sub_root, s),
+               f_dist = get_distance_to_right(sub_root, f);
+
+        return s_dist + f_dist;
     }
 
     void dump() const
