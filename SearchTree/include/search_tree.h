@@ -291,37 +291,24 @@ public:
 
     size_t get_distance(NodeConstIt s, NodeConstIt f) const
     {
+        NodeConstIt end = nodes_.end();
+        if (s == end || f == end)
+            return 0;
+
         assert(CompT{}(s->key(), f->key()));
 
-        NodeConstIt end = nodes_.end();
-        size_t s_dist = 0, f_dist = 0;
         KeyT s_key = s->key(), f_key = f->key();
+        size_t s_l_size = (s->left() != end ? s->left()->size() : 0),
+               f_r_size = (f->right() != end ? f->right()->size() : 0);
+        NodeConstIt subtree_root = s, par = s->parent();
 
-        if (is_valid(s->parent(), s_key, f_key) && s->right() != end)
-            s_dist += s->right()->size();
-        if (is_valid(f->parent(), s_key, f_key) && f->left() != end)
-            f_dist += f->left()->size();
-
-        s = s->parent();
-        f = f->parent();
-        for (bool s_valid = is_valid(s, s_key, f_key), f_valid = is_valid(f, s_key, f_key);
-             s_valid || f_valid; 
-             s_valid = is_valid(s, s_key, f_key), f_valid = is_valid(f, s_key, f_key))
+        while (par != end && is_valid(par, s_key, f_key))
         {
-            if (s_valid)
-            {
-                ++s_dist;
-                s = s->parent();
-            }
-
-            if (f_valid)
-            {
-                ++f_dist;
-                f = f->parent();
-            }
-            
+            subtree_root = par;
+            par = par->parent();
         }
-        return s_dist + f_dist - 1;
+
+        return subtree_root->size() - s_l_size - f_r_size - 2;
     }
 
     void dump() const

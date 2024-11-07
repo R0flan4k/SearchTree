@@ -56,7 +56,5 @@ TEST(SearchTree, GetDistance)
     for (auto i : input)
         st.insert(i);
 
-    st.dump();
-
     EXPECT_EQ(st.get_distance(st.lower_bound(6), st.upper_bound(16)), 5);
 }
