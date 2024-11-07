@@ -22,12 +22,13 @@ template <
     private:
         KeyT key_;
         node_colors color_;
+        size_t sz_;
         NodeIt parent_, left_, right_;
     
     public:
         node_t(const KeyT &key, node_colors color, NodeIt parent, NodeIt left,
                NodeIt right)
-            : key_(key), color_(color), parent_(parent), left_(left),
+            : key_(key), color_(color), sz_(1), parent_(parent), left_(left),
               right_(right)
         {}
 
@@ -36,12 +37,16 @@ template <
         NodeIt right() const {return right_;}
         const KeyT& key() const {return key_;}
         node_colors color() const {return color_;}
+        size_t size() const { return sz_; }
 
         void set_parent(NodeIt it) {parent_ = it;}
         void set_left(NodeIt it) {left_ = it;}
         void set_right(NodeIt it) {right_ = it;}
         void set_key(KeyT &key) {key_ = key;}
         void set_color(node_colors color) {color_ = color;}
+        void set_size(size_t sz) { sz_ = sz; }
+        void inc_size() { ++sz_; }
+        void dec_size() { --sz_; }
         // Changing color
     };
 
@@ -57,6 +62,7 @@ private:
     void rotate_node_left(NodeIt node)
     {
         NodeIt end = nodes_.end();
+        assert(node != end);
         NodeIt last_r = node->right();
         assert(last_r != end);
 
@@ -74,11 +80,20 @@ private:
 
         last_r->set_left(node);
         node->set_parent(last_r);
+
+        size_t node_sz = (node->left() != end ? node->left()->size() : 0) +
+                         (node->right() != end ? node->right()->size() : 0) + 1,
+               last_r_sz =
+                   (last_r->right() != end ? last_r->right()->size() : 0) +
+                   node_sz + 1;
+        node->set_size(node_sz);
+        last_r->set_size(last_r_sz);
     }
 
     void rotate_node_right(NodeIt node)
     {
         NodeIt end = nodes_.end();
+        assert(node != end);
         NodeIt last_l = node->left();
         assert(last_l != end);
 
@@ -96,6 +111,14 @@ private:
 
         last_l->set_right(node);
         node->set_parent(last_l);
+
+        size_t node_sz = (node->left() != end ? node->left()->size() : 0) +
+                         (node->right() != end ? node->right()->size() : 0) + 1,
+               last_l_sz =
+                   (last_l->left() != end ? last_l->left()->size() : 0) +
+                   node_sz + 1;
+        node->set_size(node_sz);
+        last_l->set_size(last_l_sz);
     }
 
     void insert_balance(NodeIt node)
@@ -179,6 +202,9 @@ private:
         else
             std::cout << "R";
         std::cout << "]" << std::endl;
+        for (size_t i = 0; i < depth; ++i)
+            std::cout << "\t";
+        std::cout << "sz" << node->size() << std::endl;
 
         if (node->left() != end())
             dump_recursive(node->left(), depth + 1);
@@ -200,6 +226,7 @@ public:
             if (KeyEqualT{}(key, cur_node->key()))
                 return end;
 
+            cur_node->inc_size();
             par = cur_node;
             if (CompT{}(key, cur_node->key()))
                 cur_node = cur_node->left();
@@ -266,8 +293,15 @@ public:
     {
         assert(CompT{}(s->key(), f->key()));
 
+        NodeConstIt end = nodes_.end();
         size_t s_dist = 0, f_dist = 0;
         KeyT s_key = s->key(), f_key = f->key();
+
+        if (is_valid(s->parent(), s_key, f_key) && s->right() != end)
+            s_dist += s->right()->size();
+        if (is_valid(f->parent(), s_key, f_key) && f->left() != end)
+            f_dist += f->left()->size();
+
         s = s->parent();
         f = f->parent();
         for (bool s_valid = is_valid(s, s_key, f_key), f_valid = is_valid(f, s_key, f_key);

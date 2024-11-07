@@ -39,6 +39,12 @@ int main(void)
                     std::cerr << "Input error: bounds." << std::endl;
                     return 1;
                 }
+                if (left >= right)
+                {
+                    std::cerr << "Left bound should be less than right."
+                              << std::endl;
+                    return 1;
+                }
                 using ConstIt = typename RangeQueries::search_tree_t<int>::NodeConstIt;
                 ConstIt left_it = st.lower_bound(left), right_it = st.upper_bound(right);
                 std::cout << st.get_distance(left_it, right_it) << " ";
