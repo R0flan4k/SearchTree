@@ -55,12 +55,28 @@ TEST(SearchTree, Bounds)
     EXPECT_EQ(st.lower_bound(5), nodes.find(5)->second);
 
     EXPECT_EQ(st1.lower_bound(8), nodes1.find(10)->second);
-    EXPECT_EQ(st1.upper_bound(31), nodes1.find(20)->second);
+    EXPECT_EQ(st1.upper_bound(31), st1.nil());
 
     EXPECT_EQ(st2.lower_bound(21), nodes2.find(21)->second);
-    EXPECT_EQ(st2.upper_bound(44), nodes2.find(45)->second);
     EXPECT_EQ(st2.lower_bound(-1), nodes2.find(0)->second);
-    EXPECT_EQ(st2.upper_bound(100), nodes2.find(99)->second);
+    EXPECT_EQ(st2.lower_bound(43), nodes2.find(44)->second);
+    EXPECT_EQ(st2.lower_bound(44), nodes2.find(44)->second);
+    EXPECT_EQ(st2.lower_bound(100), st2.nil());
+    EXPECT_EQ(st2.lower_bound(1), nodes2.find(1)->second);
+    EXPECT_EQ(st2.lower_bound(2), nodes2.find(4)->second);
+    EXPECT_EQ(st2.lower_bound(5), nodes2.find(5)->second);
+    EXPECT_EQ(st2.lower_bound(6), nodes2.find(21)->second);
+    EXPECT_EQ(st2.lower_bound(25), nodes2.find(25)->second);
+    EXPECT_EQ(st2.lower_bound(35), nodes2.find(36)->second);
+    EXPECT_EQ(st2.lower_bound(45), nodes2.find(45)->second);
+    EXPECT_EQ(st2.lower_bound(46), nodes2.find(46)->second);
+    EXPECT_EQ(st2.lower_bound(48), nodes2.find(49)->second);
+    EXPECT_EQ(st2.lower_bound(59), nodes2.find(61)->second);
+    EXPECT_EQ(st2.lower_bound(72), nodes2.find(72)->second);
+    EXPECT_EQ(st2.lower_bound(83), nodes2.find(84)->second);
+    EXPECT_EQ(st2.upper_bound(44), nodes2.find(45)->second);
+    EXPECT_EQ(st2.upper_bound(99), st2.nil());
+    EXPECT_EQ(st2.upper_bound(43), nodes2.find(44)->second);
 }
 
 TEST(SearchTree, GetDistance)
@@ -74,8 +90,23 @@ TEST(SearchTree, GetDistance)
         st1.insert(i);
 
     EXPECT_EQ(st.get_distance(st.lower_bound(6), st.upper_bound(16)), 5);
-    EXPECT_EQ(st1.get_distance(st1.lower_bound(21), st1.upper_bound(44)), 4);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(21), st1.upper_bound(43)), 3);
     EXPECT_EQ(st1.get_distance(st1.lower_bound(-1), st1.upper_bound(100)),
               input1.size());
     EXPECT_EQ(st1.get_distance(st1.lower_bound(43), st1.upper_bound(72)), 7);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(0), st1.upper_bound(1)), 2);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(0), st1.upper_bound(0)), 1);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(0), st1.upper_bound(44)), 8);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(1), st1.upper_bound(4)), 2);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(1), st1.upper_bound(5)), 3);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(1), st1.upper_bound(25)), 5);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(1), st1.upper_bound(45)), 8);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(1), st1.upper_bound(46)), 9);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(1), st1.upper_bound(61)), 12);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(1), st1.upper_bound(99)), 15);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(1), st1.upper_bound(100)), 15);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(99), st1.upper_bound(99)), 1);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(44), st1.upper_bound(100)), 9);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(-2), st1.upper_bound(-1)), 0);
+    EXPECT_EQ(st1.get_distance(st1.lower_bound(100), st1.upper_bound(101)), 0);
 }

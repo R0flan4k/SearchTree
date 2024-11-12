@@ -191,8 +191,27 @@ private:
         return node != end && is_in_interval(node->key(), left, right);
     }
 
-    NodeConstIt get_sub_root(const KeyT &l_key, const KeyT &r_key) const
+    NodeConstIt get_sub_root(NodeConstIt node) const
     {
+        NodeConstIt end = nil();
+        if (node == end)
+            return root_;
+
+        const KeyT &n_key = node->key();
+        NodeConstIt sub_root = root_;
+        while (CompT{}(sub_root->key(), n_key))
+            sub_root = sub_root->right();
+
+        return sub_root;
+    }
+
+    NodeConstIt get_sub_root(NodeConstIt l, NodeConstIt r) const
+    {
+        NodeConstIt end = nil();
+        if (r == end)
+            return get_sub_root(l);
+
+        const KeyT &l_key = l->key(), r_key = r->key();
         NodeConstIt sub_root = root_;
         while (true)
         {
@@ -209,7 +228,7 @@ private:
     size_t get_distance_to_left(NodeConstIt sub_root, NodeConstIt l) const
     {
         if (l == sub_root)
-            return 1;
+            return 0;
 
         NodeConstIt end = nil(), par = sub_root, cur_node;
         KeyT l_key = l->key();
@@ -238,9 +257,11 @@ private:
     size_t get_distance_to_right(NodeConstIt sub_root, NodeConstIt r) const
     {
         if (r == sub_root)
-            return 1;
-
+            return 0;
         NodeConstIt end = nil(), par = sub_root, cur_node;
+        if (r == end)
+            return sub_root->right() != end ? sub_root->right()->size() + 1 : 1;
+
         KeyT r_key = r->key();
         size_t r_dist = 0;
 
@@ -285,6 +306,13 @@ private:
             dump_recursive(node->left(), depth + 1);
     }
 
+    struct NodeCompT {
+        constexpr bool operator()(NodeConstIt lhs, NodeConstIt rhs) const
+        {
+            return CompT{}(lhs->key(), rhs->key());
+        }
+    };
+
 public:
     search_tree_t() : nodes_(), root_(nil()) {}
 
@@ -322,59 +350,53 @@ public:
     NodeConstIt lower_bound(const KeyT &key) const
     {
         NodeConstIt end = nil();
-        NodeConstIt par = end, cur_node = root_;
+        NodeConstIt res = end, cur_node = root_;
 
         while (cur_node != end)
         {
             if (CompT{}(key, cur_node->key()))
             {
-                par = cur_node;
+                res = (res == end) ? cur_node
+                                   : std::min(cur_node, res, NodeCompT{});
                 cur_node = cur_node->left();
             }
             else if (KeyEqualT{}(key, cur_node->key()))
                 return cur_node;
             else
-            {
-                par = cur_node;
                 cur_node = cur_node->right();
-            }
         }
 
-        return par;
+        return res;
     }
 
     NodeConstIt upper_bound(const KeyT &key) const
     {
         NodeConstIt end = nil();
-        NodeConstIt par = end, cur_node = root_;
+        NodeConstIt res = end, cur_node = root_;
 
         while (cur_node != end)
         {
             if (CompT{}(key, cur_node->key()))
             {
-                par = cur_node;
+                res = (res == end) ? cur_node
+                                   : std::min(cur_node, res, NodeCompT{});
                 cur_node = cur_node->left();
             }
             else
-            {
-                par = cur_node;
                 cur_node = cur_node->right();
-            }
         }
 
-        return par;
+        return res;
     }
 
     size_t get_distance(NodeConstIt s, NodeConstIt f) const
     {
-        NodeConstIt end = nil();
-        if (s == end || f == end || s == f)
+        if (s == f)
             return 0;
-        KeyT s_key = s->key(), f_key = f->key();
-        assert(CompT{}(s_key, f_key));
+        NodeConstIt end = nil();
+        assert(f == end ? s != end : CompT{}(s->key(), f->key()));
 
-        NodeConstIt sub_root = get_sub_root(s_key, f_key);
-
+        NodeConstIt sub_root = get_sub_root(s, f);
         size_t s_dist = get_distance_to_left(sub_root, s),
                f_dist = get_distance_to_right(sub_root, f);
 
