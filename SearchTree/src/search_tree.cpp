@@ -11,7 +11,6 @@ enum rq_error_t {
     REQUEST_TYPE = 1 << 0,
     KEY = 1 << 1,
     BOUNDS = 1 << 2,
-    LEFT_GE_RIGHT = 1 << 3,
 };
 
 rq_error_t handle_request(search_tree_t &st, char request)
@@ -35,8 +34,11 @@ rq_error_t handle_request(search_tree_t &st, char request)
         if (!std::cin.good())
             return rq_error_t::BOUNDS;
 
-        if (left >= right)
-            return rq_error_t::LEFT_GE_RIGHT;
+        if (left > right)
+        {
+            std::cout << "0 ";
+            break;
+        }
 
         using ConstIt = typename RangeQueries::search_tree_t<int>::NodeConstIt;
         ConstIt left_it = st.lower_bound(left),
@@ -67,10 +69,6 @@ rq_error_t print_error(rq_error_t err)
 
     case rq_error_t::BOUNDS:
         std::cerr << "Input error: bounds." << std::endl;
-        break;
-
-    case rq_error_t::LEFT_GE_RIGHT:
-        std::cerr << "Left bound should be less than right." << std::endl;
         break;
 
     default:
