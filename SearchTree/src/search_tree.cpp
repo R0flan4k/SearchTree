@@ -21,17 +21,27 @@ rq_error_t handle_request(search_tree_t &st, char request)
     {
         int key;
         std::cin >> key;
-        if (!std::cin.good())
+        if (!std::cin.good() && !std::cin.eof())
             return rq_error_t::KEY;
 
         st.insert(key);
+
+#ifndef NDEBUG
+        if (!st.valid())
+        {
+            std::cout << "Inserting " << key << "." << std::endl;
+            st.dump();
+            abort();
+        }
+#endif
+
         break;
     }
     case 'q':
     {
         int left, right;
         std::cin >> left >> right;
-        if (!std::cin.good())
+        if (!std::cin.good() && !std::cin.eof())
             return rq_error_t::BOUNDS;
 
         if (left > right)

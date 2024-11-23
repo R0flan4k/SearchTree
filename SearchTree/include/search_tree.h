@@ -306,6 +306,13 @@ private:
             dump_recursive(node->left(), depth + 1);
     }
 
+    template <typename RandomIt>
+    void insert_update_sizes(RandomIt start, RandomIt end)
+    {
+        for (; start != end; ++start)
+            (*start)->inc_size();
+    }
+
     struct NodeCompT {
         constexpr bool operator()(NodeConstIt lhs, NodeConstIt rhs) const
         {
@@ -313,20 +320,60 @@ private:
         }
     };
 
+#ifndef NDEBUG
+
+    bool valid_rec(NodeConstIt node) const
+    {
+        NodeConstIt end = nil();
+        if (node->left() != end && !valid_rec(node->left()))
+            return false;
+        if (node->right() != end && !valid_rec(node->right()))
+            return false;
+        size_t r_sz = node->right() != end ? node->right()->size() : 0,
+               l_sz = node->left() != end ? node->left()->size() : 0;
+        return node->size() == r_sz + l_sz + 1;
+    }
+
+#endif
+
 public:
     search_tree_t() : nodes_(), root_(nil()) {}
+
+    size_t size() const { return root_->size(); }
+
+    NodeConstIt find(const KeyT &key)
+    {
+        NodeConstIt end = nil();
+        NodeConstIt par = end, cur_node = root_;
+
+        while (cur_node != end)
+        {
+            if (KeyEqualT{}(key, cur_node->key()))
+                return cur_node;
+
+            if (CompT{}(key, cur_node->key))
+                cur_node = cur_node->left();
+            else
+                cur_node = cur_node->right();
+        }
+        return end;
+    }
 
     NodeIt insert(const KeyT &key)
     {
         NodeIt end = nil();
         NodeIt par = end, cur_node = root_;
-        
+        // We use this vector to increment sizes of nodes
+        // that contain new node. If node with this key
+        // already exists we don't increment sizes.
+        std::vector<NodeIt> nodes_to_inc;
+
         while (cur_node != end)
         {
             if (KeyEqualT{}(key, cur_node->key()))
-                return end;
+                return cur_node;
 
-            cur_node->inc_size();
+            nodes_to_inc.push_back(cur_node);
             par = cur_node;
             if (CompT{}(key, cur_node->key()))
                 cur_node = cur_node->left();
@@ -343,6 +390,7 @@ public:
         else
             par->set_right(new_node);
 
+        insert_update_sizes(nodes_to_inc.begin(), nodes_to_inc.end());
         insert_balance(new_node);
         return new_node;
     }
@@ -408,6 +456,12 @@ public:
         size_t start_depth = 0;
         dump_recursive(root_, start_depth);
     }
+
+#ifndef NDEBUG
+
+    bool valid() const { return valid_rec(root_); }
+
+#endif
 };
 
 }
