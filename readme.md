@@ -8,8 +8,8 @@ This program builds self-balancing binary search tree to contain numbers and cou
 
 Firstly clone this repo and go root directory.
 ```
-git clone git@github.com:R0flan4k/Triangles3D.git
-cd Triangles3D
+git clone git@github.com:R0flan4k/SearchTree.git
+cd SearchTree
 ```
 
 Next download conan into virtual environments:
