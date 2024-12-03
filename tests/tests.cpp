@@ -1,6 +1,7 @@
 #include "search_tree.h"
 #include "gtest/gtest.h"
 
+#include <iterator>
 #include <set>
 #include <sstream>
 #include <string>
@@ -8,14 +9,6 @@
 #include <vector>
 
 using It = typename RangeQueries::search_tree_t<int>::NodeIt;
-
-template <typename RandIt> static size_t get_distance(RandIt start, RandIt end)
-{
-    size_t dist = 0;
-    for (; start != end; ++start)
-        ++dist;
-    return dist;
-}
 
 TEST(SearchTree, BalanceInsert)
 {
@@ -27,25 +20,25 @@ TEST(SearchTree, BalanceInsert)
     for (auto i : input2)
         st2.insert(i);
 
-    EXPECT_EQ(n1->parent(), n2);
-    EXPECT_EQ(n1->left(), st.nil());
-    EXPECT_EQ(n1->right(), st.nil());
-    EXPECT_EQ(n2->parent(), st.nil());
-    EXPECT_EQ(n2->left(), n1);
-    EXPECT_EQ(n2->right(), n3);
-    EXPECT_EQ(n3->parent(), n2);
-    EXPECT_EQ(n3->right(), st.nil());
-    EXPECT_EQ(n3->left(), st.nil());
+    EXPECT_EQ(n1->parent, n2);
+    EXPECT_EQ(n1->left, st.nil());
+    EXPECT_EQ(n1->right, st.nil());
+    EXPECT_EQ(n2->parent, st.nil());
+    EXPECT_EQ(n2->left, n1);
+    EXPECT_EQ(n2->right, n3);
+    EXPECT_EQ(n3->parent, n2);
+    EXPECT_EQ(n3->right, st.nil());
+    EXPECT_EQ(n3->left, st.nil());
 
-    EXPECT_EQ(n4->parent(), n6);
-    EXPECT_EQ(n4->right(), st1.nil());
-    EXPECT_EQ(n4->left(), st1.nil());
-    EXPECT_EQ(n5->parent(), n6);
-    EXPECT_EQ(n5->right(), st1.nil());
-    EXPECT_EQ(n5->left(), st1.nil());
-    EXPECT_EQ(n6->parent(), st1.nil());
-    EXPECT_EQ(n6->right(), n4);
-    EXPECT_EQ(n6->left(), n5);
+    EXPECT_EQ(n4->parent, n6);
+    EXPECT_EQ(n4->right, st1.nil());
+    EXPECT_EQ(n4->left, st1.nil());
+    EXPECT_EQ(n5->parent, n6);
+    EXPECT_EQ(n5->right, st1.nil());
+    EXPECT_EQ(n5->left, st1.nil());
+    EXPECT_EQ(n6->parent, st1.nil());
+    EXPECT_EQ(n6->right, n4);
+    EXPECT_EQ(n6->left, n5);
 }
 
 TEST(SearchTree, Bounds)
@@ -242,7 +235,7 @@ TEST(SearchTree, SetRangeQueries)
                     st_right_it = st.upper_bound(b2);
             auto s_left_it = s.lower_bound(b1), s_right_it = s.upper_bound(b2);
             EXPECT_EQ(st.get_distance(st_left_it, st_right_it),
-                      get_distance(s_left_it, s_right_it));
+                      std::distance(s_left_it, s_right_it));
             break;
         }
         case 'k':

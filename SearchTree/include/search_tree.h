@@ -3,6 +3,7 @@
 #include <cassert>
 #include <functional>
 #include <iostream>
+#include <iterator>
 #include <list>
 #include <unordered_map>
 
@@ -13,40 +14,15 @@ template <
     class CompT = std::less<KeyT>, 
     class KeyEqualT = std::equal_to<KeyT>
 > class search_tree_t final {
-    class node_t final {
-    public:
-        enum node_colors { RED, BLACK };
+    struct node_t final {
+        enum class node_colors : int { RED, BLACK };
         using NodeIt = typename std::list<node_t>::iterator;
         using NodeConstIt = typename std::list<node_t>::const_iterator;
 
-    private:
-        KeyT key_;
-        node_colors color_;
-        size_t sz_;
-        NodeIt parent_, left_, right_;
-    
-    public:
-        node_t(const KeyT &key, node_colors color, NodeIt parent, NodeIt left,
-               NodeIt right)
-            : key_(key), color_(color), sz_(1), parent_(parent), left_(left),
-              right_(right)
-        {}
-
-        NodeIt parent() const {return parent_;}
-        NodeIt left() const {return left_;}
-        NodeIt right() const {return right_;}
-        const KeyT& key() const {return key_;}
-        node_colors color() const {return color_;}
-        size_t size() const { return sz_; }
-
-        void set_parent(NodeIt it) {parent_ = it;}
-        void set_left(NodeIt it) {left_ = it;}
-        void set_right(NodeIt it) {right_ = it;}
-        void set_key(KeyT &key) {key_ = key;}
-        void set_color(node_colors color) {color_ = color;}
-        void set_size(size_t sz) { sz_ = sz; }
-        void inc_size() { ++sz_; }
-        void dec_size() { --sz_; }
+        KeyT key;
+        node_colors color;
+        NodeIt parent, left, right;
+        size_t sz = 1;
     };
 
 public:
@@ -65,130 +41,113 @@ private:
     {
         NodeIt end = nil();
         assert(node != end);
-        NodeIt last_r = node->right();
+        NodeIt last_r = node->right;
         assert(last_r != end);
 
-        node->set_right(last_r->left());
-        if (last_r->left() != end)
-            last_r->left()->set_parent(node);
-        last_r->set_parent(node->parent());
+        node->right = last_r->left;
+        if (last_r->left != end)
+            last_r->left->parent = node;
+        last_r->parent = node->parent;
 
-        if (node->parent() == end)
+        if (node->parent == end)
             root_ = last_r;
-        else if (node == node->parent()->left())
-            node->parent()->set_left(last_r);
+        else if (node == node->parent->left)
+            node->parent->left = last_r;
         else
-            node->parent()->set_right(last_r);
+            node->parent->right = last_r;
 
-        last_r->set_left(node);
-        node->set_parent(last_r);
+        last_r->left = node;
+        node->parent = last_r;
 
-        size_t node_sz = (node->left() != end ? node->left()->size() : 0) +
-                         (node->right() != end ? node->right()->size() : 0) + 1,
-               last_r_sz =
-                   (last_r->right() != end ? last_r->right()->size() : 0) +
-                   node_sz + 1;
-        node->set_size(node_sz);
-        last_r->set_size(last_r_sz);
+        node->sz = (node->left != end ? node->left->sz : 0) +
+                   (node->right != end ? node->right->sz : 0) + 1;
+        last_r->sz =
+            (last_r->right != end ? last_r->right->sz : 0) + node->sz + 1;
     }
 
     void rotate_node_right(NodeIt node)
     {
         NodeIt end = nil();
         assert(node != end);
-        NodeIt last_l = node->left();
+        NodeIt last_l = node->left;
         assert(last_l != end);
 
-        node->set_left(last_l->right());
-        if (last_l->right() != end)
-            last_l->right()->set_parent(node);
-        last_l->set_parent(node->parent());
+        node->left = last_l->right;
+        if (last_l->right != end)
+            last_l->right->parent = node;
+        last_l->parent = node->parent;
 
-        if (node->parent() == end)
+        if (node->parent == end)
             root_ = last_l;
-        else if (node == node->parent()->right())
-            node->parent()->set_right(last_l);
+        else if (node == node->parent->right)
+            node->parent->right = last_l;
         else
-            node->parent()->set_left(last_l);
+            node->parent->left = last_l;
 
-        last_l->set_right(node);
-        node->set_parent(last_l);
+        last_l->right = node;
+        node->parent = last_l;
 
-        size_t node_sz = (node->left() != end ? node->left()->size() : 0) +
-                         (node->right() != end ? node->right()->size() : 0) + 1,
-               last_l_sz =
-                   (last_l->left() != end ? last_l->left()->size() : 0) +
-                   node_sz + 1;
-        node->set_size(node_sz);
-        last_l->set_size(last_l_sz);
+        node->sz = (node->left != end ? node->left->sz : 0) +
+                   (node->right != end ? node->right->sz : 0) + 1;
+        last_l->sz =
+            (last_l->left != end ? last_l->left->sz : 0) + node->sz + 1;
     }
 
     void insert_balance(NodeIt node)
     {
         NodeIt end = nil();
-        if (node->parent() != end)
+        if (node->parent != end)
         {
-            while (node->parent() != end &&
-                   node->parent()->color() == node_colors::RED)
+            while (node->parent != end &&
+                   node->parent->color == node_colors::RED)
             {
-                if (node->parent() == node->parent()->parent()->left()) 
+                if (node->parent == node->parent->parent->left)
                 {
-                    NodeIt ppr = node->parent()->parent()->right();
-                    if (ppr != end && ppr->color() == node_colors::RED)
+                    NodeIt ppr = node->parent->parent->right;
+                    if (ppr != end && ppr->color == node_colors::RED)
                     {
-                        node->parent()->set_color(node_colors::BLACK);
-                        ppr->set_color(node_colors::BLACK);
-                        node->parent()->parent()->set_color(node_colors::RED);
-                        node = node->parent()->parent(); 
+                        node->parent->color = node_colors::BLACK;
+                        ppr->color = node_colors::BLACK;
+                        node->parent->parent->color = node_colors::RED;
+                        node = node->parent->parent;
                     }
-                    else if (node == node->parent()->right())
+                    else if (node == node->parent->right)
                     {
-                        node = node->parent();
+                        node = node->parent;
                         rotate_node_left(node);
                     }
                     else
                     {
-                        node->parent()->set_color(node_colors::BLACK);
-                        node->parent()->parent()->set_color(node_colors::RED);
-                        rotate_node_right(node->parent()->parent());
+                        node->parent->color = node_colors::BLACK;
+                        node->parent->parent->color = node_colors::RED;
+                        rotate_node_right(node->parent->parent);
                     }
                 }
                 else
                 {
-                    NodeIt ppl = node->parent()->parent()->left();
-                    if (ppl != end && ppl->color() == node_colors::RED)
+                    NodeIt ppl = node->parent->parent->left;
+                    if (ppl != end && ppl->color == node_colors::RED)
                     {
-                        node->parent()->set_color(node_colors::BLACK);
-                        ppl->set_color(node_colors::BLACK);
-                        node->parent()->parent()->set_color(node_colors::RED);
-                        node = node->parent()->parent(); 
+                        node->parent->color = node_colors::BLACK;
+                        ppl->color = node_colors::BLACK;
+                        node->parent->parent->color = node_colors::RED;
+                        node = node->parent->parent;
                     }
-                    else if (node == node->parent()->left())
+                    else if (node == node->parent->left)
                     {
-                        node = node->parent();
+                        node = node->parent;
                         rotate_node_right(node);
                     }
                     else
                     {
-                        node->parent()->set_color(node_colors::BLACK);
-                        node->parent()->parent()->set_color(node_colors::RED);
-                        rotate_node_left(node->parent()->parent());
+                        node->parent->color = node_colors::BLACK;
+                        node->parent->parent->color = node_colors::RED;
+                        rotate_node_left(node->parent->parent);
                     }
                 }
             }
         }
-        root_->set_color(node_colors::BLACK);
-    }
-
-    bool is_in_interval(const KeyT &key, const KeyT &left, const KeyT &right) const
-    {
-        return CompT{}(left, key) && CompT{}(key, right);
-    }
-
-    bool is_valid(NodeConstIt node, const KeyT &left, const KeyT &right) const
-    {
-        NodeConstIt end = nil();
-        return node != end && is_in_interval(node->key(), left, right);
+        root_->color = node_colors::BLACK;
     }
 
     NodeConstIt get_sub_root(NodeConstIt node) const
@@ -197,10 +156,10 @@ private:
         if (node == end)
             return root_;
 
-        const KeyT &n_key = node->key();
+        const KeyT &n_key = node->key;
         NodeConstIt sub_root = root_;
-        while (CompT{}(sub_root->key(), n_key))
-            sub_root = sub_root->right();
+        while (CompT{}(sub_root->key, n_key))
+            sub_root = sub_root->right;
 
         return sub_root;
     }
@@ -211,14 +170,14 @@ private:
         if (r == end)
             return get_sub_root(l);
 
-        const KeyT &l_key = l->key(), r_key = r->key();
+        const KeyT &l_key = l->key, r_key = r->key;
         NodeConstIt sub_root = root_;
         while (true)
         {
-            if (CompT{}(sub_root->key(), l_key))
-                sub_root = sub_root->right();
-            else if (CompT{}(r_key, sub_root->key()))
-                sub_root = sub_root->left();
+            if (CompT{}(sub_root->key, l_key))
+                sub_root = sub_root->right;
+            else if (CompT{}(r_key, sub_root->key))
+                sub_root = sub_root->left;
             else
                 break;
         }
@@ -231,24 +190,24 @@ private:
             return 0;
 
         NodeConstIt end = nil(), par = sub_root, cur_node;
-        KeyT l_key = l->key();
+        KeyT l_key = l->key;
         size_t l_dist = 0;
 
-        cur_node = sub_root->left();
+        cur_node = sub_root->left;
         while (par != l)
         {
-            if (CompT{}(cur_node->key(), l_key))
+            if (CompT{}(cur_node->key, l_key))
             {
                 par = cur_node;
-                cur_node = cur_node->right();
+                cur_node = cur_node->right;
             }
             else
             {
-                if (cur_node->right() != end)
-                    l_dist += cur_node->right()->size();
+                if (cur_node->right != end)
+                    l_dist += cur_node->right->sz;
                 ++l_dist;
                 par = cur_node;
-                cur_node = cur_node->left();
+                cur_node = cur_node->left;
             }
         }
         return l_dist;
@@ -260,26 +219,26 @@ private:
             return 0;
         NodeConstIt end = nil(), par = sub_root, cur_node;
         if (r == end)
-            return sub_root->right() != end ? sub_root->right()->size() + 1 : 1;
+            return sub_root->right != end ? sub_root->right->sz + 1 : 1;
 
-        KeyT r_key = r->key();
+        KeyT r_key = r->key;
         size_t r_dist = 0;
 
-        cur_node = sub_root->right();
+        cur_node = sub_root->right;
         while (par != r)
         {
-            if (CompT{}(r_key, cur_node->key()))
+            if (CompT{}(r_key, cur_node->key))
             {
                 par = cur_node;
-                cur_node = cur_node->left();
+                cur_node = cur_node->left;
             }
             else
             {
-                if (cur_node->left() != end)
-                    r_dist += cur_node->left()->size();
+                if (cur_node->left != end)
+                    r_dist += cur_node->left->sz;
                 ++r_dist;
                 par = cur_node;
-                cur_node = cur_node->right();
+                cur_node = cur_node->right;
             }
         }
         return r_dist;
@@ -287,59 +246,55 @@ private:
 
     void dump_recursive(NodeIt node, size_t depth) const
     {
-        if (node->right() != nil())
-            dump_recursive(node->right(), depth + 1);
+        if (node->right != nil())
+            dump_recursive(node->right, depth + 1);
 
         for (size_t i = 0; i < depth; ++i)
             std::cout << "\t";
-        std::cout << "[" << node->key();
-        if (node->color() == node_colors::BLACK)
+        std::cout << "[" << node->key;
+        if (node->color == node_colors::BLACK)
             std::cout << "B";
         else
             std::cout << "R";
         std::cout << "]" << std::endl;
         for (size_t i = 0; i < depth; ++i)
             std::cout << "\t";
-        std::cout << "sz" << node->size() << std::endl;
+        std::cout << "sz" << node->sz << std::endl;
 
-        if (node->left() != nil())
-            dump_recursive(node->left(), depth + 1);
+        if (node->left != nil())
+            dump_recursive(node->left, depth + 1);
     }
 
-    template <typename RandomIt>
+    template <std::random_access_iterator RandomIt>
     void insert_update_sizes(RandomIt start, RandomIt end)
     {
         for (; start != end; ++start)
-            (*start)->inc_size();
+            (*start)->sz++;
     }
 
     struct NodeCompT {
         constexpr bool operator()(NodeConstIt lhs, NodeConstIt rhs) const
         {
-            return CompT{}(lhs->key(), rhs->key());
+            return CompT{}(lhs->key, rhs->key);
         }
     };
-
-#ifndef NDEBUG
 
     bool valid_rec(NodeConstIt node) const
     {
         NodeConstIt end = nil();
-        if (node->left() != end && !valid_rec(node->left()))
+        if (node->left != end && !valid_rec(node->left))
             return false;
-        if (node->right() != end && !valid_rec(node->right()))
+        if (node->right != end && !valid_rec(node->right))
             return false;
-        size_t r_sz = node->right() != end ? node->right()->size() : 0,
-               l_sz = node->left() != end ? node->left()->size() : 0;
-        return node->size() == r_sz + l_sz + 1;
+        size_t r_sz = node->right != end ? node->right->sz : 0,
+               l_sz = node->left != end ? node->left->sz : 0;
+        return node->sz == r_sz + l_sz + 1;
     }
-
-#endif
 
 public:
     search_tree_t() : nodes_(), root_(nil()) {}
 
-    size_t size() const { return root_->size(); }
+    size_t size() const { return root_->sz; }
 
     NodeConstIt find(const KeyT &key)
     {
@@ -348,13 +303,13 @@ public:
 
         while (cur_node != end)
         {
-            if (KeyEqualT{}(key, cur_node->key()))
+            if (KeyEqualT{}(key, cur_node->key))
                 return cur_node;
 
             if (CompT{}(key, cur_node->key))
-                cur_node = cur_node->left();
+                cur_node = cur_node->left;
             else
-                cur_node = cur_node->right();
+                cur_node = cur_node->right;
         }
         return end;
     }
@@ -370,25 +325,25 @@ public:
 
         while (cur_node != end)
         {
-            if (KeyEqualT{}(key, cur_node->key()))
+            if (KeyEqualT{}(key, cur_node->key))
                 return cur_node;
 
             nodes_to_inc.push_back(cur_node);
             par = cur_node;
-            if (CompT{}(key, cur_node->key()))
-                cur_node = cur_node->left();
+            if (CompT{}(key, cur_node->key))
+                cur_node = cur_node->left;
             else
-                cur_node = cur_node->right();
+                cur_node = cur_node->right;
         }
 
         nodes_.emplace_back(key, node_colors::RED, par, end, end);
         NodeIt new_node = std::prev(end);
         if (par == end)
             root_ = new_node;
-        else if (CompT{}(key, par->key()))
-            par->set_left(new_node);
+        else if (CompT{}(key, par->key))
+            par->left = new_node;
         else
-            par->set_right(new_node);
+            par->right = new_node;
 
         insert_update_sizes(nodes_to_inc.begin(), nodes_to_inc.end());
         insert_balance(new_node);
@@ -402,16 +357,16 @@ public:
 
         while (cur_node != end)
         {
-            if (CompT{}(key, cur_node->key()))
+            if (CompT{}(key, cur_node->key))
             {
                 res = (res == end) ? cur_node
                                    : std::min(cur_node, res, NodeCompT{});
-                cur_node = cur_node->left();
+                cur_node = cur_node->left;
             }
-            else if (KeyEqualT{}(key, cur_node->key()))
+            else if (KeyEqualT{}(key, cur_node->key))
                 return cur_node;
             else
-                cur_node = cur_node->right();
+                cur_node = cur_node->right;
         }
 
         return res;
@@ -424,14 +379,14 @@ public:
 
         while (cur_node != end)
         {
-            if (CompT{}(key, cur_node->key()))
+            if (CompT{}(key, cur_node->key))
             {
                 res = (res == end) ? cur_node
                                    : std::min(cur_node, res, NodeCompT{});
-                cur_node = cur_node->left();
+                cur_node = cur_node->left;
             }
             else
-                cur_node = cur_node->right();
+                cur_node = cur_node->right;
         }
 
         return res;
@@ -442,7 +397,7 @@ public:
         if (s == f)
             return 0;
         NodeConstIt end = nil();
-        assert(f == end ? s != end : CompT{}(s->key(), f->key()));
+        assert(f == end ? s != end : CompT{}(s->key, f->key));
 
         NodeConstIt sub_root = get_sub_root(s, f);
         size_t s_dist = get_distance_to_left(sub_root, s),
@@ -457,11 +412,7 @@ public:
         dump_recursive(root_, start_depth);
     }
 
-#ifndef NDEBUG
-
     bool valid() const { return valid_rec(root_); }
-
-#endif
 };
 
 }
