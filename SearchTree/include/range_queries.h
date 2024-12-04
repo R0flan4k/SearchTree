@@ -1,6 +1,9 @@
 #pragma once
 
-#include <search_tree_exceptions.h>
+#include "search_tree_exceptions.h"
+
+#include <iostream>
+#include <optional>
 
 namespace RangeQueries {
 

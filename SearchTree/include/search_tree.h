@@ -103,7 +103,7 @@ private:
 
     void insert_balance_repaint_p_is_left(NodeIt &node, NodeIt uncle)
     {
-        if (uncle != end && uncle->color == node_colors::RED)
+        if (uncle != nil() && uncle->color == node_colors::RED)
         {
             insert_balance_repaint_uncle_is_red(node, uncle);
             node = node->parent->parent;
@@ -123,7 +123,7 @@ private:
 
     void insert_balance_repaint_p_is_right(NodeIt &node, NodeIt uncle)
     {
-        if (uncle != end && uncle->color == node_colors::RED)
+        if (uncle != nil() && uncle->color == node_colors::RED)
         {
             insert_balance_repaint_uncle_is_red(node, uncle);
             node = node->parent->parent;
