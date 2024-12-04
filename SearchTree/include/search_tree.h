@@ -15,7 +15,7 @@ template <
     class KeyEqualT = std::equal_to<KeyT>
 > class search_tree_t final {
     struct node_t final {
-        enum class node_colors : int { RED, BLACK };
+        enum class node_colors : bool { RED, BLACK };
         using NodeIt = typename std::list<node_t>::iterator;
         using NodeConstIt = typename std::list<node_t>::const_iterator;
 
@@ -36,6 +36,11 @@ public:
 private:
     std::list<node_t> nodes_;
     NodeIt root_;
+
+    size_t subtree_size(NodeIt node) const
+    {
+        return node != nil() ? node->sz : 0;
+    }
 
     void rotate_node_left(NodeIt node)
     {
@@ -59,10 +64,8 @@ private:
         last_r->left = node;
         node->parent = last_r;
 
-        node->sz = (node->left != end ? node->left->sz : 0) +
-                   (node->right != end ? node->right->sz : 0) + 1;
-        last_r->sz =
-            (last_r->right != end ? last_r->right->sz : 0) + node->sz + 1;
+        node->sz = subtree_size(node->left) + subtree_size(node->right) + 1;
+        last_r->sz = subtree_size(last_r->right) + node->sz + 1;
     }
 
     void rotate_node_right(NodeIt node)
@@ -87,10 +90,55 @@ private:
         last_l->right = node;
         node->parent = last_l;
 
-        node->sz = (node->left != end ? node->left->sz : 0) +
-                   (node->right != end ? node->right->sz : 0) + 1;
-        last_l->sz =
-            (last_l->left != end ? last_l->left->sz : 0) + node->sz + 1;
+        node->sz = subtree_size(node->left) + subtree_size(node->right) + 1;
+        last_l->sz = subtree_size(last_l->left) + node->sz + 1;
+    }
+
+    void insert_balance_repaint_uncle_is_red(NodeIt node, NodeIt uncle)
+    {
+        node->parent->color = node_colors::BLACK;
+        uncle->color = node_colors::BLACK;
+        node->parent->parent->color = node_colors::RED;
+    }
+
+    void insert_balance_repaint_p_is_left(NodeIt &node, NodeIt uncle)
+    {
+        if (uncle != end && uncle->color == node_colors::RED)
+        {
+            insert_balance_repaint_uncle_is_red(node, uncle);
+            node = node->parent->parent;
+        }
+        else if (node == node->parent->right)
+        {
+            node = node->parent;
+            rotate_node_left(node);
+        }
+        else
+        {
+            node->parent->color = node_colors::BLACK;
+            node->parent->parent->color = node_colors::RED;
+            rotate_node_right(node->parent->parent);
+        }
+    }
+
+    void insert_balance_repaint_p_is_right(NodeIt &node, NodeIt uncle)
+    {
+        if (uncle != end && uncle->color == node_colors::RED)
+        {
+            insert_balance_repaint_uncle_is_red(node, uncle);
+            node = node->parent->parent;
+        }
+        else if (node == node->parent->left)
+        {
+            node = node->parent;
+            rotate_node_right(node);
+        }
+        else
+        {
+            node->parent->color = node_colors::BLACK;
+            node->parent->parent->color = node_colors::RED;
+            rotate_node_left(node->parent->parent);
+        }
     }
 
     void insert_balance(NodeIt node)
@@ -103,47 +151,13 @@ private:
             {
                 if (node->parent == node->parent->parent->left)
                 {
-                    NodeIt ppr = node->parent->parent->right;
-                    if (ppr != end && ppr->color == node_colors::RED)
-                    {
-                        node->parent->color = node_colors::BLACK;
-                        ppr->color = node_colors::BLACK;
-                        node->parent->parent->color = node_colors::RED;
-                        node = node->parent->parent;
-                    }
-                    else if (node == node->parent->right)
-                    {
-                        node = node->parent;
-                        rotate_node_left(node);
-                    }
-                    else
-                    {
-                        node->parent->color = node_colors::BLACK;
-                        node->parent->parent->color = node_colors::RED;
-                        rotate_node_right(node->parent->parent);
-                    }
+                    NodeIt uncle = node->parent->parent->right;
+                    insert_balance_repaint_p_is_left(node, uncle);
                 }
                 else
                 {
-                    NodeIt ppl = node->parent->parent->left;
-                    if (ppl != end && ppl->color == node_colors::RED)
-                    {
-                        node->parent->color = node_colors::BLACK;
-                        ppl->color = node_colors::BLACK;
-                        node->parent->parent->color = node_colors::RED;
-                        node = node->parent->parent;
-                    }
-                    else if (node == node->parent->left)
-                    {
-                        node = node->parent;
-                        rotate_node_right(node);
-                    }
-                    else
-                    {
-                        node->parent->color = node_colors::BLACK;
-                        node->parent->parent->color = node_colors::RED;
-                        rotate_node_left(node->parent->parent);
-                    }
+                    NodeIt uncle = node->parent->parent->left;
+                    insert_balance_repaint_p_is_right(node, uncle);
                 }
             }
         }
@@ -219,7 +233,7 @@ private:
             return 0;
         NodeConstIt end = nil(), par = sub_root, cur_node;
         if (r == end)
-            return sub_root->right != end ? sub_root->right->sz + 1 : 1;
+            return subtree_size(sub_root->right) + 1;
 
         KeyT r_key = r->key;
         size_t r_dist = 0;
@@ -286,8 +300,8 @@ private:
             return false;
         if (node->right != end && !valid_rec(node->right))
             return false;
-        size_t r_sz = node->right != end ? node->right->sz : 0,
-               l_sz = node->left != end ? node->left->sz : 0;
+        size_t r_sz = subtree_size(node->right),
+               l_sz = subtree_size(node->left);
         return node->sz == r_sz + l_sz + 1;
     }
 

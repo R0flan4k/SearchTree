@@ -1,3 +1,4 @@
+#include "range_queries.h"
 #include "search_tree.h"
 #include "gtest/gtest.h"
 
@@ -9,6 +10,17 @@
 #include <vector>
 
 using It = typename RangeQueries::search_tree_t<int>::NodeIt;
+
+template <class Key> class set_update : public std::set<Key> {
+public:
+    using SetIt = typename std::set<Key>::iterator;
+    using SetConstIt = typename std::set<Key>::const_iterator;
+
+    size_t get_distance(SetConstIt lower, SetConstIt upper) const
+    {
+        return std::distance(lower, upper);
+    }
+};
 
 TEST(SearchTree, BalanceInsert)
 {
@@ -148,8 +160,6 @@ TEST(SearchTree, GetDistance)
 
 TEST(SearchTree, SetRangeQueries)
 {
-    std::set<int> s;
-    RangeQueries::search_tree_t<int> st{};
     std::basic_string<char> str =
         "q 159 253 k 89 k 139 q 194 188 q 0 107 q 277 278 k 260 k 181 k 132 q "
         "257 280 q 95 270 q 44 64 k 284 q 45 124 k 45 q 249 90 k 188 q 189 21 "
@@ -216,39 +226,28 @@ TEST(SearchTree, SetRangeQueries)
         "k 161 k 18 q 25 153 k 98 k 65 q 107 166 q 110 26 k 132 k 252 k 94 q "
         "169 160 q 172 100 q 14 220 k 122 k 216 k 10 q 191 143 k 156 q 279 230 "
         "q 300 19 q 254 151 q 157 84 e";
-    std::basic_stringstream<char> stream{str};
-
+    set_update<int> s;
+    RangeQueries::search_tree_t<int> st{};
+    std::vector<size_t> s_ans, st_ans;
     char request;
+
+    std::basic_stringstream<char> stream{str};
     for (stream >> request; request != 'e'; stream >> request)
     {
-        switch (request)
-        {
-        case 'q':
-        {
-            int b1, b2;
-            stream >> b1 >> b2;
-            if (b1 > b2)
-                break;
-            using ConstIt =
-                typename RangeQueries::search_tree_t<int>::NodeConstIt;
-            ConstIt st_left_it = st.lower_bound(b1),
-                    st_right_it = st.upper_bound(b2);
-            auto s_left_it = s.lower_bound(b1), s_right_it = s.upper_bound(b2);
-            EXPECT_EQ(st.get_distance(st_left_it, st_right_it),
-                      std::distance(s_left_it, s_right_it));
-            break;
-        }
-        case 'k':
-        {
-            int key;
-            stream >> key;
-            s.insert(key);
-            st.insert(key);
-            break;
-        }
-        default:
-            assert(0 && "UNREACHABLE");
-            break;
-        }
+        auto res = RangeQueries::handle_request(st, request, stream);
+        if (res.has_value())
+            st_ans.push_back(*res);
     }
+
+    stream.seekg(0);
+    for (stream >> request; request != 'e'; stream >> request)
+    {
+        auto res = RangeQueries::handle_request(s, request, stream);
+        if (res.has_value())
+            s_ans.push_back(*res);
+    }
+
+    EXPECT_EQ(s_ans.size(), st_ans.size());
+    for (size_t i = 0, sz = s_ans.size(); i < sz; ++i)
+        EXPECT_EQ(s_ans[i], st_ans[i]);
 }
