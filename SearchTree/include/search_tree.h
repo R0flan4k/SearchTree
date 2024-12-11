@@ -30,6 +30,7 @@ public:
     using NodeIt = typename node_t::NodeIt;
     using NodeConstIt = typename node_t::NodeConstIt;
 
+    NodeConstIt root() const { return root_; }
     NodeIt nil() { return nodes_.end(); }
     NodeConstIt nil() const { return nodes_.end(); }
 
@@ -283,27 +284,6 @@ private:
         return r_dist;
     }
 
-    void dump_recursive(NodeIt node, size_t depth) const
-    {
-        if (node->right != nil())
-            dump_recursive(node->right, depth + 1);
-
-        for (size_t i = 0; i < depth; ++i)
-            std::cout << "\t";
-        std::cout << "[" << node->key;
-        if (node->color == node_colors::BLACK)
-            std::cout << "B";
-        else
-            std::cout << "R";
-        std::cout << "]" << std::endl;
-        for (size_t i = 0; i < depth; ++i)
-            std::cout << "\t";
-        std::cout << "sz" << node->sz << std::endl;
-
-        if (node->left != nil())
-            dump_recursive(node->left, depth + 1);
-    }
-
     template <std::random_access_iterator RandomIt>
     void insert_update_sizes(RandomIt start, RandomIt end)
     {
@@ -445,13 +425,40 @@ public:
         return s_dist + f_dist;
     }
 
-    void dump() const
-    {
-        size_t start_depth = 0;
-        dump_recursive(root_, start_depth);
-    }
-
     bool valid() const { return valid_rec(root_); }
 };
 
+template <typename SearchTreeT> struct search_tree_dumper {
+    static void dump(const SearchTreeT &t, std::ostream &os = std::cout)
+    {
+        size_t start_depth = 0;
+        search_tree_dumper::dump_recursive(t, t.root(), start_depth, os);
+    }
+
+private:
+    using NodeConstIt = typename SearchTreeT::NodeConstIt;
+    using node_colors = SearchTreeT::node_colors;
+
+    static void dump_recursive(const SearchTreeT &t, NodeConstIt node,
+                               size_t depth, std::ostream &os)
+    {
+        if (node->right != t.nil())
+            search_tree_dumper::dump_recursive(t, node->right, depth + 1, os);
+
+        for (size_t i = 0; i < depth; ++i)
+            os << "\t";
+        os << "[" << node->key;
+        if (node->color == node_colors::BLACK)
+            os << "B";
+        else
+            os << "R";
+        os << "]" << std::endl;
+        for (size_t i = 0; i < depth; ++i)
+            os << "\t";
+        os << "sz" << node->sz << std::endl;
+
+        if (node->left != t.nil())
+            search_tree_dumper::dump_recursive(t, node->left, depth + 1, os);
+    }
+};
 }

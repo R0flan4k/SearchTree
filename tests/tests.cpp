@@ -251,3 +251,17 @@ TEST(SearchTree, SetRangeQueries)
     for (size_t i = 0, sz = s_ans.size(); i < sz; ++i)
         EXPECT_EQ(s_ans[i], st_ans[i]);
 }
+
+TEST(SearchTree, DumperTest)
+{
+    RangeQueries::search_tree_t<int> st{};
+    std::vector<int> input{0,  44, 45, 1,  4,  5,  49, 57,
+                           61, 72, 84, 99, 21, 25, 36, 46};
+    for (auto i : input)
+        st.insert(i);
+
+    using dumper =
+        RangeQueries::search_tree_dumper<RangeQueries::search_tree_t<int>>;
+    dumper::dump(st);
+    EXPECT_EQ(1, 1);
+}
