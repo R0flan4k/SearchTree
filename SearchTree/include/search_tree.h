@@ -101,46 +101,6 @@ private:
         node->parent->parent->color = node_colors::RED;
     }
 
-    // void insert_balance_repaint_p_is_left(NodeIt &node, NodeIt uncle)
-    // {
-    //     if (uncle != nil() && uncle->color == node_colors::RED)
-    //     {
-    //         insert_balance_repaint_uncle_is_red(node, uncle);
-    //         node = node->parent->parent;
-    //     }
-    //     else if (node == node->parent->right)
-    //     {
-    //         node = node->parent;
-    //         rotate_node_left(node);
-    //     }
-    //     else
-    //     {
-    //         node->parent->color = node_colors::BLACK;
-    //         node->parent->parent->color = node_colors::RED;
-    //         rotate_node_right(node->parent->parent);
-    //     }
-    // }
-
-    // void insert_balance_repaint_p_is_right(NodeIt &node, NodeIt uncle)
-    // {
-    //     if (uncle != nil() && uncle->color == node_colors::RED)
-    //     {
-    //         insert_balance_repaint_uncle_is_red(node, uncle);
-    //         node = node->parent->parent;
-    //     }
-    //     else if (node == node->parent->left)
-    //     {
-    //         node = node->parent;
-    //         rotate_node_right(node);
-    //     }
-    //     else
-    //     {
-    //         node->parent->color = node_colors::BLACK;
-    //         node->parent->parent->color = node_colors::RED;
-    //         rotate_node_left(node->parent->parent);
-    //     }
-    // }
-
     template <class rotation_policy>
     void insert_balance_repaint(NodeIt &node, NodeIt uncle)
     {
@@ -152,14 +112,12 @@ private:
         else if (node == rotation_policy::different_side_child(node))
         {
             node = node->parent;
-            // rotate_node_right(node);
             rotation_policy::different_side_child_rotate(*this, node);
         }
         else
         {
             node->parent->color = node_colors::BLACK;
             node->parent->parent->color = node_colors::RED;
-            // rotate_node_left(node->parent->parent);
             rotation_policy::residual_rotate(*this, node);
         }
     }
