@@ -101,44 +101,111 @@ private:
         node->parent->parent->color = node_colors::RED;
     }
 
-    void insert_balance_repaint_p_is_left(NodeIt &node, NodeIt uncle)
+    // void insert_balance_repaint_p_is_left(NodeIt &node, NodeIt uncle)
+    // {
+    //     if (uncle != nil() && uncle->color == node_colors::RED)
+    //     {
+    //         insert_balance_repaint_uncle_is_red(node, uncle);
+    //         node = node->parent->parent;
+    //     }
+    //     else if (node == node->parent->right)
+    //     {
+    //         node = node->parent;
+    //         rotate_node_left(node);
+    //     }
+    //     else
+    //     {
+    //         node->parent->color = node_colors::BLACK;
+    //         node->parent->parent->color = node_colors::RED;
+    //         rotate_node_right(node->parent->parent);
+    //     }
+    // }
+
+    // void insert_balance_repaint_p_is_right(NodeIt &node, NodeIt uncle)
+    // {
+    //     if (uncle != nil() && uncle->color == node_colors::RED)
+    //     {
+    //         insert_balance_repaint_uncle_is_red(node, uncle);
+    //         node = node->parent->parent;
+    //     }
+    //     else if (node == node->parent->left)
+    //     {
+    //         node = node->parent;
+    //         rotate_node_right(node);
+    //     }
+    //     else
+    //     {
+    //         node->parent->color = node_colors::BLACK;
+    //         node->parent->parent->color = node_colors::RED;
+    //         rotate_node_left(node->parent->parent);
+    //     }
+    // }
+
+    template <class rotation_policy>
+    void insert_balance_repaint(NodeIt &node, NodeIt uncle)
     {
         if (uncle != nil() && uncle->color == node_colors::RED)
         {
             insert_balance_repaint_uncle_is_red(node, uncle);
             node = node->parent->parent;
         }
-        else if (node == node->parent->right)
+        else if (node == rotation_policy::different_side_child(node))
         {
             node = node->parent;
-            rotate_node_left(node);
+            // rotate_node_right(node);
+            rotation_policy::different_side_child_rotate(*this, node);
         }
         else
         {
             node->parent->color = node_colors::BLACK;
             node->parent->parent->color = node_colors::RED;
-            rotate_node_right(node->parent->parent);
+            // rotate_node_left(node->parent->parent);
+            rotation_policy::residual_rotate(*this, node);
         }
+    }
+
+    struct repaint_rotate_parent_is_left {
+        static NodeIt different_side_child(NodeIt node)
+        {
+            return node->parent->right;
+        }
+
+        static void different_side_child_rotate(search_tree_t &t, NodeIt node)
+        {
+            t.rotate_node_left(node);
+        }
+
+        static void residual_rotate(search_tree_t &t, NodeIt node)
+        {
+            t.rotate_node_right(node->parent->parent);
+        }
+    };
+
+    struct repaint_rotate_parent_is_right {
+        static NodeIt different_side_child(NodeIt node)
+        {
+            return node->parent->left;
+        }
+
+        static void different_side_child_rotate(search_tree_t &t, NodeIt node)
+        {
+            t.rotate_node_right(node);
+        }
+
+        static void residual_rotate(search_tree_t &t, NodeIt node)
+        {
+            t.rotate_node_left(node->parent->parent);
+        }
+    };
+
+    void insert_balance_repaint_p_is_left(NodeIt &node, NodeIt uncle)
+    {
+        insert_balance_repaint<repaint_rotate_parent_is_left>(node, uncle);
     }
 
     void insert_balance_repaint_p_is_right(NodeIt &node, NodeIt uncle)
     {
-        if (uncle != nil() && uncle->color == node_colors::RED)
-        {
-            insert_balance_repaint_uncle_is_red(node, uncle);
-            node = node->parent->parent;
-        }
-        else if (node == node->parent->left)
-        {
-            node = node->parent;
-            rotate_node_right(node);
-        }
-        else
-        {
-            node->parent->color = node_colors::BLACK;
-            node->parent->parent->color = node_colors::RED;
-            rotate_node_left(node->parent->parent);
-        }
+        insert_balance_repaint<repaint_rotate_parent_is_right>(node, uncle);
     }
 
     void insert_balance(NodeIt node)
