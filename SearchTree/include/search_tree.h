@@ -308,6 +308,42 @@ private:
         return node->sz == r_sz + l_sz + 1;
     }
 
+    template <class side_policy> NodeConstIt get_bound(const KeyT &key) const
+    {
+        NodeConstIt end = nil();
+        NodeConstIt res = end, cur_node = root_;
+
+        while (cur_node != end)
+        {
+            if (CompT{}(key, cur_node->key))
+            {
+                res = (res == end) ? cur_node
+                                   : std::min(cur_node, res, NodeCompT{});
+                cur_node = cur_node->left;
+            }
+            else if (side_policy::cur_node_condition(key, cur_node))
+                return cur_node;
+            else
+                cur_node = cur_node->right;
+        }
+
+        return res;
+    }
+
+    struct lower_bound_policy {
+        static bool cur_node_condition(const KeyT &key, NodeConstIt node)
+        {
+            return KeyEqualT{}(key, node->key);
+        }
+    };
+
+    struct upper_bound_policy {
+        static bool cur_node_condition(const KeyT &key, NodeConstIt node)
+        {
+            return false;
+        }
+    };
+
 public:
     search_tree_t() : nodes_(), root_(nil()) {}
 
@@ -369,44 +405,12 @@ public:
 
     NodeConstIt lower_bound(const KeyT &key) const
     {
-        NodeConstIt end = nil();
-        NodeConstIt res = end, cur_node = root_;
-
-        while (cur_node != end)
-        {
-            if (CompT{}(key, cur_node->key))
-            {
-                res = (res == end) ? cur_node
-                                   : std::min(cur_node, res, NodeCompT{});
-                cur_node = cur_node->left;
-            }
-            else if (KeyEqualT{}(key, cur_node->key))
-                return cur_node;
-            else
-                cur_node = cur_node->right;
-        }
-
-        return res;
+        return get_bound<lower_bound_policy>(key);
     }
 
     NodeConstIt upper_bound(const KeyT &key) const
     {
-        NodeConstIt end = nil();
-        NodeConstIt res = end, cur_node = root_;
-
-        while (cur_node != end)
-        {
-            if (CompT{}(key, cur_node->key))
-            {
-                res = (res == end) ? cur_node
-                                   : std::min(cur_node, res, NodeCompT{});
-                cur_node = cur_node->left;
-            }
-            else
-                cur_node = cur_node->right;
-        }
-
-        return res;
+        return get_bound<upper_bound_policy>(key);
     }
 
     size_t get_distance(NodeConstIt s, NodeConstIt f) const
