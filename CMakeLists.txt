@@ -11,5 +11,16 @@ add_executable(SearchTree.x)
 target_sources(SearchTree.x PRIVATE ${SRCS})
 target_include_directories(SearchTree.x PUBLIC "${CMAKE_SOURCE_DIR}/SearchTree/include")
 
+set(CLANG_FORMAT_SRCS 
+	${SRCS} 
+	${CMAKE_SOURCE_DIR}/SearchTree/include/*.h 
+	${CMAKE_SOURCE_DIR}/tests/*.cpp
+)
+add_custom_target(
+	clangformat
+	ALL
+	COMMAND clang-format -style=file -i ${CLANG_FORMAT_SRCS} 
+)
+
 add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
 
