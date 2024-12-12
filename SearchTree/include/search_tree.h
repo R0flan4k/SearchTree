@@ -7,13 +7,11 @@
 #include <list>
 #include <unordered_map>
 
-namespace RangeQueries{
+namespace RangeQueries {
 
-template <
-    typename KeyT, 
-    class CompT = std::less<KeyT>, 
-    class KeyEqualT = std::equal_to<KeyT>
-> class search_tree_t final {
+template <typename KeyT, class CompT = std::less<KeyT>,
+          class KeyEqualT = std::equal_to<KeyT>>
+class search_tree_t final {
     struct node_t final {
         enum class node_colors : bool { RED, BLACK };
         using NodeIt = typename std::list<node_t>::iterator;
@@ -461,4 +459,4 @@ private:
             search_tree_dumper::dump_recursive(t, node->left, depth + 1, os);
     }
 };
-}
+} // namespace RangeQueries
