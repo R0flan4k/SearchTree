@@ -10,7 +10,7 @@ using search_tree_t = typename RangeQueries::search_tree_t<int>;
 
 int main(void)
 {
-    RangeQueries::search_tree_t<int> st{};
+    search_tree_t st{};
     char request;
     for (std::cin >> request; !std::cin.eof(); std::cin >> request)
     {

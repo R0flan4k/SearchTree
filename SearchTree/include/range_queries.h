@@ -3,6 +3,7 @@
 #include "search_tree_exceptions.h"
 
 #include <iostream>
+#include <iterator>
 #include <optional>
 
 namespace RangeQueries {
@@ -42,6 +43,13 @@ std::optional<size_t> handle_request(SetT &st, char request,
         break;
     }
     return std::optional<size_t>{};
+}
+
+template <std::random_access_iterator RandomIt>
+void rq_update_sizes(RandomIt start, RandomIt end)
+{
+    for (; start != end; ++start)
+        (*start)->sz++;
 }
 
 } // namespace RangeQueries

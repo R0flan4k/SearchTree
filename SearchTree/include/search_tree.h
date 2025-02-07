@@ -1,5 +1,7 @@
 #pragma once
 
+#include "range_queries.h"
+
 #include <cassert>
 #include <functional>
 #include <iostream>
@@ -282,13 +284,6 @@ private:
         return r_dist;
     }
 
-    template <std::random_access_iterator RandomIt>
-    void insert_update_sizes(RandomIt start, RandomIt end)
-    {
-        for (; start != end; ++start)
-            (*start)->sz++;
-    }
-
     struct NodeCompT {
         constexpr bool operator()(NodeConstIt lhs, NodeConstIt rhs) const
         {
@@ -398,7 +393,7 @@ public:
         else
             par->right = new_node;
 
-        insert_update_sizes(nodes_to_inc.begin(), nodes_to_inc.end());
+        rq_update_sizes(nodes_to_inc.begin(), nodes_to_inc.end());
         insert_balance(new_node);
         return new_node;
     }
@@ -431,7 +426,7 @@ public:
 };
 
 template <typename SearchTreeT> struct search_tree_dumper {
-    static void dump(const SearchTreeT &t, std::ostream &os = std::cout)
+    void dump(const SearchTreeT &t, std::ostream &os = std::cout)
     {
         size_t start_depth = 0;
         search_tree_dumper::dump_recursive(t, t.root(), start_depth, os);
@@ -441,8 +436,8 @@ private:
     using NodeConstIt = typename SearchTreeT::NodeConstIt;
     using node_colors = SearchTreeT::node_colors;
 
-    static void dump_recursive(const SearchTreeT &t, NodeConstIt node,
-                               size_t depth, std::ostream &os)
+    void dump_recursive(const SearchTreeT &t, NodeConstIt node, size_t depth,
+                        std::ostream &os)
     {
         if (node->right != t.nil())
             search_tree_dumper::dump_recursive(t, node->right, depth + 1, os);

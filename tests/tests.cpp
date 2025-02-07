@@ -262,6 +262,6 @@ TEST(SearchTree, DumperTest)
 
     using dumper =
         RangeQueries::search_tree_dumper<RangeQueries::search_tree_t<int>>;
-    dumper::dump(st);
+    dumper{}.dump(st);
     EXPECT_EQ(1, 1);
 }
